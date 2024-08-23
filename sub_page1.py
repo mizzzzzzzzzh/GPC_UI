@@ -19,7 +19,7 @@ import plotly.express as px
 #     initial_sidebar_state="expanded",
 # )
 
-print("page 1", st.session_state)
+# print("page 1", st.session_state)
 
 
 
@@ -175,7 +175,7 @@ async def main():
 
 
 asyncio.run(main())
-print("page 1 end", st.session_state)
+# print("page 1 end", st.session_state)
 
 
 

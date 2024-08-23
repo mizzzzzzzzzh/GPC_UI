@@ -11,7 +11,7 @@ import sys
     
 df = pd.read_parquet("data/data.parquet")
 
-print("page 2", st.session_state)
+# print("page 2", st.session_state)
 # st.set_page_config(
 #     page_title="数据回溯系统",
 #     page_icon=":shield:",

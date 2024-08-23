@@ -6,7 +6,7 @@ from streamlit_extras.mandatory_date_range import date_range_picker
 from streamlit_modal import Modal
 
 
-print("page 3", st.session_state)
+# print("page 3", st.session_state)
 
 # st.set_page_config(
 #     page_title="先进控制系统",
@@ -231,4 +231,4 @@ with tab1:
 # with buttonCol:
 #     st.button("\nRestart\n", on_click=lambda x: print(x))
 
-print("page 3 end")
+# print("page 3 end")
