@@ -49,7 +49,7 @@ st.set_page_config(
 #         f'<img src="data:image/png;base64,{img_base64}" class="cover-glow">',
 #         unsafe_allow_html=True,
 #     )
-print("page home", st.session_state)
+# print("page home", st.session_state)
 
 # st.sidebar.write("GPC 切投状态")
 sub_page1 = st.Page("sub_page1.py", title="实时监控系统", icon="🕙")
