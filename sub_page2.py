@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit_date_picker import date_range_picker, date_picker, PickerType
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from streamlit_extras.mandatory_date_range import date_range_picker
 import pandas as pd
 import plotly.graph_objects as go
@@ -8,16 +8,57 @@ import numpy as np
 from io import StringIO
 import contextlib
 import sys
-    
+from utils.http_api_helper import history_data_retrieve_api, login_api
+import json 
+
+
+
+
+
+
 df = pd.read_parquet("data/data.parquet")
 
 # print("page 2", st.session_state)
-# st.set_page_config(
-#     page_title="数据回溯系统",
-#     page_icon=":shield:",
-#     layout="wide",
-#     initial_sidebar_state="expanded",
-# )
+st.set_page_config(
+    page_title="数据回溯系统",
+    page_icon=":shield:",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+SYS_VARS_MAP = {
+    "汽温控制系统": ["功率", "给煤", "给水", "阀门开度", "主汽压力", "中间点温度"],
+    "XXX": ["XXX","XXX"],
+    "...": []
+}
+
+VARS_DICT = {
+    "给煤": "coal_feed",
+    "给水": "water_supply",
+    "阀门开度": "valve_opening",
+    "主汽压力": "main_steam_pressure",
+    "中间点温度": "intermediate_point_temperature",
+    "功率": "power",
+    "coal_feed": "給煤",
+    "water_supply": "給水",
+    "valve_opening": "阀门开度",
+    "power": "功率",
+    "intermediate_point_temperature": "中间点温度",
+    "main_steam_pressure": "主汽压力"
+}
+
+login_data = {
+    "username": "ics_data",
+    "password": "123456",
+}
+
+if st.session_state.get("sys_selected") is None:
+    st.session_state["sys_selected"] = "汽温控制系统"
+if st.session_state.get("vars_selected") is None:
+    st.session_state["vars_selected"] = SYS_VARS_MAP["汽温控制系统"]
+if st.session_state.get("token") is None:
+    st.session_state["token"] = json.loads(login_api(login_data))["data"]["token"]
+    
 css="""
 <style>
     [data-testid="stForm"] {
@@ -39,99 +80,100 @@ if c4.button("〽️ 离线数据回溯", type="primary", use_container_width=Tr
 if c5.button("© 先进控制系统", use_container_width=True):
     st.switch_page("sub_page3.py")
 
-with st.form("retrieval_info"):
-    # header = st.columns([1,2,3,1])
+
+@st.fragment
+def sys_and_vars():
+    row1 = st.columns([1,2], vertical_alignment='center', gap="large")
+
+    sys_select = row1[0].selectbox(
+        "请选择要查看的控制系统",
+        list(SYS_VARS_MAP.keys()),
+        
+    )
+    field_selected = row1[1].multiselect(
+        "请选择查看的变量",
+        SYS_VARS_MAP[sys_select],
+        SYS_VARS_MAP[sys_select][:4]
+    )
+    st.session_state["sys_selected"] = sys_select
+    st.session_state["vars_selected"] = field_selected
+
+sys_and_vars()
+
+
+with st.form("retrieval_info", border = True):
+    row2 = st.columns([1,1,6,1], vertical_alignment='center', gap="medium")
+    # header = st.columns([1,2,1,1])
     # header[0].subheader('Color')
     # header[1].subheader('Opacity')
     # header[2].subheader('Size')
+    # row12 = st.columns([1,1,2,1])
 
-    row1 = st.columns([2,4,4,1], vertical_alignment='center', gap="large")
-    option = row1[0].selectbox(
-        "请选择要查看的控制系统",
-        ("汽温控制系统", "风烟系统", "燃烧总图", "给水系统" ,"..."),
-    )
-    field_selected = row1[1].multiselect(
-        "请选择严查看的变量",
-        ["负荷", "主汽压", "主汽温", "主汽流量", "再热气压", "再热气温", "总风量", "总煤量", "汽包水位", "给水流量"],
-        ["负荷", "主汽压", "主汽温", "主汽流量"],
-    )
-    with row1[2]:
-        result = date_range_picker("Select a date range")
+    start_date = row2[0].date_input("数据开始日期", value=datetime(year=2023, month=2, day=25))
+    start_time = row2[1].time_input("数据开始时间", value=time(hour=1, minute=0))
 
-    # st.write("Result:", result[1].ctime())
+
     
-    row1[3].form_submit_button('查  询',type="secondary", use_container_width=True)
+    plus_min = row2[2].select_slider(
+            "数据持续时间（不超过300分钟）",
+            options= [f"{i} min" for i in list(range(1, 301))]
+        )    # st.write("Result:", result[1].ctime())
+    
+    row2[3].form_submit_button('查  询',type="secondary", use_container_width=True)
 
 # st.markdown("This text is :red[colored red], and this is **:blue[colored]** and bold.")
 
 # print("page 2 end")
 row2 = st.columns([1,3], gap="large")
-def df_info_to_markdown(df):
-    # 获取列名和数据类型
-    columns = df.columns.tolist()
-    dtypes = df.dtypes.tolist()
-    
-    # 计算每列的非空值数量
-    non_null_counts = df.count().tolist()
-    
-    # 创建Markdown表格
-    markdown_table = "| Column | Non-null Count | Dtype |\n"
-    markdown_table += "| --- | --- | --- |\n"
-    
-    for i in range(len(columns)):
-        markdown_table += f"| {columns[i]} | {non_null_counts[i]} | {dtypes[i]} |\n"
-    
-    return markdown_table
 
 with row2[0]:
     st.subheader("数据统计")
     st.markdown('---')
-    st.dataframe(df.describe().T)
+    header = {"token":st.session_state.token}
+    body = {
+        "endTime": (datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S') + timedelta(minutes=int(plus_min.split(' ')[0]))).strftime('%Y-%m-%d %H:%M:%S'), 
+        "includeBounds": "True",
+        "interval": 1000,
+        "startTime": f"{start_date} {start_time}",
+        "namespace": "unit01",
+        "tags": [VARS_DICT[col] for col in st.session_state["vars_selected"]]
+        # "tags": ["coal_feed", "water_supply", "valve_opening", "main_steam_pressure","intermediate_point_temperature", "power"]
+    }
+    print(body)
+    resp = history_data_retrieve_api(header, body)
+    pdlist = []
+    for data in resp.json()['data']:
+        base_dict = {"name":data['tag']}
+        if data['data']:
+            series = pd.DataFrame(data['data']).value.describe().to_dict()
+            base_dict.update(series)
+        pdlist.append(base_dict)
+    st.dataframe(pd.DataFrame(pdlist).set_index("name").T)
     # st.markdown(df_info_to_markdown(df))
     
 
 with row2[1]:
-    # st.subheader("数据视图")
-    # Create random data with numpy
-    # np.random.seed(1)
+    def history_mutli_plot(resp):
+        colors = ["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#e377c2"]
+        fig = go.Figure()
+        pdict = {
+                "title":"历史曲线",
+                "xaxis": dict(title='时间', domain=[0, min(1, 1 - (len(resp['data'])-2) * 0.08)],automargin=True),
+            }
+        for idx, data in enumerate(resp['data']):
+            y_label = data['tag']
+            # x = [datetime.strptime(d['time'], '%Y-%m-%d %H:%M:%S') for d in data['data']]
+            x = [datetime.fromtimestamp(d['time']/1000) for d in data['data']]
+            y = [d['value'] for d in data['data']]
+            fig.add_trace(go.Scatter(x=x, y=y, name=VARS_DICT[y_label],yaxis=f'y{idx+1}', line_color=colors[idx]))
+            if idx==0:
+                pdict["yaxis"] = dict( title=VARS_DICT[y_label], titlefont=dict(color=colors[idx]), tickfont=dict(color=colors[idx]), automargin=True)
+            else:
+                pdict[f"yaxis{idx+1 if idx!=0 else ''}"] = dict( title=VARS_DICT[y_label], titlefont=dict(color=colors[idx]), tickfont=dict(color=colors[idx]), anchor="free", overlaying="y", side="right", position=1-max(0, idx-1)*0.08,automargin=True)
+            
+        fig.update_layout(**pdict)
+        return fig
 
-    N = 100
-    random_x = np.linspace(0, 1, N)
-    random_y0 = np.random.randn(N) + 5
-    random_y1 = np.random.randn(N)
-    random_y2 = np.random.randn(N) - 5
-
-    # Create figure with secondary y-axis
-    fig = go.Figure()
-
-    # Add traces on the primary y-axis
-    fig.add_trace(go.Scatter(x=random_x, y=random_y0,
-                            mode='lines',
-                            name='lines',
-                            yaxis='y1'))  # Specify the default y-axis
-
-    # Add traces on the secondary y-axis
-    fig.add_trace(go.Scatter(x=random_x, y=random_y1,
-                            mode='lines+markers',
-                            name='lines+markers',
-                            yaxis='y2'))  # Use the secondary y-axis
-
-    # Add traces on the tertiary y-axis
-    fig.add_trace(go.Scatter(x=random_x, y=random_y2,
-                            mode='markers',
-                            name='markers',
-                            yaxis='y3'))  # Use the tertiary y-axis
-
-    # Define layout for secondary and tertiary y-axes
-    fig.update_layout(
-        yaxis=dict(title='Primary Y-axis'),
-        yaxis2=dict(title='Secondary Y-axis', overlaying='y', side='right', anchor='free', position=0.95),
-        yaxis3=dict(title='Tertiary Y-axis', overlaying='y', side='right', anchor='free', position=1),
-        xaxis=dict(title='X-axis', domain=[0, 0.95]),
-        width=800, 
-        height=600
-    )
-   
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(history_mutli_plot(resp.json()), use_container_width=True)
 
 

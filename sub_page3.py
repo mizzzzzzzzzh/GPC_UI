@@ -4,34 +4,45 @@ import plotly.express as px
 import plotly.graph_objects as go
 from streamlit_extras.mandatory_date_range import date_range_picker
 from streamlit_modal import Modal
+from utils.http_api_helper import history_data_retrieve_api, login_api
+
+import json
+import pandas as pd
+
+print("page 3", st.session_state)
+df = pd.read_parquet("data/data.parquet")
+
+st.set_page_config(
+    page_title="先进控制系统",
+    page_icon=":shield:",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 
-# print("page 3", st.session_state)
 
-# st.set_page_config(
-#     page_title="先进控制系统",
-#     page_icon=":shield:",
-#     layout="wide",
-#     initial_sidebar_state="expanded",
-# )
-
- 
 class PIDController:
-            def __init__(self, Kp, Ki, Kd):
-                self.Kp = Kp
-                self.Ki = Ki
-                self.Kd = Kd
-                self.error_integral = 0
-                self.previous_error = 0
+    def __init__(self, Kp, Ki, Kd):
+        self.Kp = Kp
+        self.Ki = Ki
+        self.Kd = Kd
+        self.error_integral = 0
+        self.previous_error = 0
 
-            def update(self, setpoint, process_variable):
-                error = setpoint - process_variable
-                self.error_integral += error
-                error_derivative = error - self.previous_error
-                output = (self.Kp * error) + (self.Ki * self.error_integral) + (self.Kd * error_derivative)
-                self.previous_error = error
-                return output
+    def update(self, setpoint, process_variable):
+        error = setpoint - process_variable
+        self.error_integral += error
+        error_derivative = error - self.previous_error
+        output = (self.Kp * error) + (self.Ki * self.error_integral) + (self.Kd * error_derivative)
+        self.previous_error = error
+        return output
 
+login_data = {
+    "username": "ics_data",
+    "password": "123456",
+}
+if st.session_state.get("token") is None:
+    st.session_state["token"] = json.loads(login_api(login_data))["data"]["token"]
 
 c1,c2, c3,c4,c5= st.columns((2,4,2,2,2,), vertical_alignment='center')
 c1.image("logo2.png", width=200)
@@ -47,6 +58,7 @@ if c5.button("© GPC先进控制系统", type="primary", use_container_width=Tru
 
 
 with tab1:
+    
     row_1 = st.columns((3,3,1))
     with row_1[0]:
         st.subheader("GPC控制系统")
@@ -108,7 +120,7 @@ with tab1:
                 pid_controller = PIDController(Kp, Ki, Kd)
 
                 # 模拟数据
-                time_steps = 200  # 增加时间步长
+                time_steps = 20  # 增加时间步长
                 setpoint = 10.0
                 initial_process_value = 0.0
                 process_values = [initial_process_value]
@@ -139,7 +151,7 @@ with tab1:
                 # 添加设定值的水平线
                 fig.add_shape(type="line", x0=0, y0=setpoint, x1=time_steps, y1=setpoint, line=dict(color="LightSeaGreen", dash="dash"), name='Setpoint')
 
-                fig.update_layout(title='GPC Controller Simulation (Smoothed)',
+                fig.update_layout(title='GPC Controller Simulation ',
                                 xaxis_title='Time Step',
                                 yaxis_title='Value',
                                 legend_title='Legend')
@@ -148,7 +160,7 @@ with tab1:
             
     with row_1[2]:
         st.subheader("应用状态")
-        on = st.toggle("投入")
+        on = st.toggle("投入", value=True)
         if on:
             st.markdown("XXXGPC控制系统:green[已投入]")
         else :
@@ -204,31 +216,4 @@ with tab1:
                 if button_row[2].button("放弃"):
                     modal.close()
             
-
-
-
- 
-
-
-
-# st.markdown(
-#     """
-# <style>
-# button {
-#     height: auto;
-#     padding-top: 10px !important;
-#     padding-bottom: 10px !important;
-# }
-# </style>
-# """,
-#     unsafe_allow_html=True,
-# )
-
-# instructionCol, buttonCol = st.columns([4,1])
-# with instructionCol:
-#     with st.expander("Instructions"):
-#         st.write("Pretend these are the instructions.")
-# with buttonCol:
-#     st.button("\nRestart\n", on_click=lambda x: print(x))
-
-# print("page 3 end")
+            
