@@ -12,12 +12,12 @@ import pandas as pd
 print("page 3", st.session_state)
 df = pd.read_parquet("data/data.parquet")
 
-st.set_page_config(
-    page_title="先进控制系统",
-    page_icon=":shield:",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+# st.set_page_config(
+#     page_title="先进控制系统",
+#     page_icon=":shield:",
+#     layout="wide",
+#     initial_sidebar_state="expanded",
+# )
 
 
 
@@ -41,7 +41,7 @@ login_data = {
     "username": "ics_data",
     "password": "123456",
 }
-if st.session_state.get("token") is None:
+if not st.session_state.get("token"):
     st.session_state["token"] = json.loads(login_api(login_data))["data"]["token"]
 
 c1,c2, c3,c4,c5= st.columns((2,4,2,2,2,), vertical_alignment='center')

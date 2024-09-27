@@ -244,8 +244,14 @@ ctl_df = pd.DataFrame({'优化控制器—1': ['投入'],'优化控制器—2': 
 warning_df = pd.DataFrame({'预警状态—1': ['正常'],'预警状态—2': ['报警'], '预警状态—3': ['正常'],'预警状态—4': ['正常'],'预警状态—5': ['报警'],'预警状态—6': ['正常']}).style.apply(set_row_background_css, axis=0)
 
 from utils.ws_api_helper import receive_realtime_data
+from utils.http_api_helper import login_api
+login_data = {
+    "username": "ics_data",
+    "password": "123456",
+}
 namespace = "dummy_namespace"
-st.session_state['token'] = ''
+if not st.session_state.get("token"):
+    st.session_state["token"] = json.loads(login_api(login_data))["data"]["token"]
 uri = f"ws://localhost:8720/rtdata?namespace={namespace}&token={st.session_state['token']}"
 async def main():
     await asyncio.gather(

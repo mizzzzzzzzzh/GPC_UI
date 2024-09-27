@@ -19,12 +19,12 @@ import json
 df = pd.read_parquet("data/data.parquet")
 
 # print("page 2", st.session_state)
-st.set_page_config(
-    page_title="数据回溯系统",
-    page_icon=":shield:",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+# st.set_page_config(
+#     page_title="数据回溯系统",
+#     page_icon=":shield:",
+#     layout="wide",
+#     initial_sidebar_state="expanded",
+# )
 
 SYS_VARS_MAP = {
     "汽温控制系统": ["功率", "给煤", "给水", "阀门开度", "主汽压力", "中间点温度"],
@@ -56,7 +56,7 @@ if st.session_state.get("sys_selected") is None:
     st.session_state["sys_selected"] = "汽温控制系统"
 if st.session_state.get("vars_selected") is None:
     st.session_state["vars_selected"] = SYS_VARS_MAP["汽温控制系统"]
-if st.session_state.get("token") is None:
+if not st.session_state.get("token"):
     st.session_state["token"] = json.loads(login_api(login_data))["data"]["token"]
     
 css="""
@@ -130,6 +130,7 @@ with row2[0]:
     st.subheader("数据统计")
     st.markdown('---')
     header = {"token":st.session_state.token}
+    print(header)
     body = {
         "endTime": (datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S') + timedelta(minutes=int(plus_min.split(' ')[0]))).strftime('%Y-%m-%d %H:%M:%S'), 
         "includeBounds": "True",

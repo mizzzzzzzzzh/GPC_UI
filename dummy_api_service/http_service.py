@@ -103,38 +103,6 @@ async def find_data_by_section(query_data: QueryData, token: str = Header(None))
 
     return resp_dict
 
-@app.post("/macs/v1/realtime/read/findPoint")
-async def find_data_by_section(query_data: QueryData, token: str = Header(None)):
-    # 这里仅作为示例，实际应用中你需要根据endTime, startTime等参数查询数据库并返回数据
-    print(token, query_data)
-    print(token==TOKEN)
-    if not token or token != TOKEN:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    _d = df.query(f" '{query_data.startTime}' <=time_period <='{query_data.endTime}'")
-
-    resp_dict = {
-        "data": [
-            {
-                "namespace": query_data.namespace,
-                "tag": tag,
-                "total": _d.shape[0],
-                "data": [
-                    {
-                        "time": datetime2ts(row.time_period),
-                        "qos": 0,
-                        "value": row[tag]
-                    } for _, row in _d.iterrows()
-                ]
-            } for tag in query_data.tags
-        ],
-        "message": "操作成功!",
-        "status": 0,
-        "timestamp": int(datetime.now().timestamp()) * 1000
-    }
-
-    return resp_dict
-
 
 if __name__ == "__main__":
     import uvicorn

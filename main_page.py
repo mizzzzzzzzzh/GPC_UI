@@ -25,10 +25,11 @@ login_data = {
     "password": "123456",
 }
 
-if st.session_state.get("token") is None:
+if not st.session_state.get("token"):
 
     token = json.loads(login_api(login_data))["data"]["token"]
     st.session_state["token"] = token
+
 
 sub_page1 = st.Page("sub_page1.py", title="实时监控系统", icon="🕙")
 sub_page2 = st.Page("sub_page2.py", title="离线数据回溯", icon="〽️")
